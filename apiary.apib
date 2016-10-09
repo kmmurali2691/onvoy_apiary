@@ -82,7 +82,7 @@ The TTL call provides the time remaining in the 2 hour validity of the API_Secre
 + Response 200 (application/json)
 
         {
-        time_to_live: 7104 
+             "time_to_live": "7104" 
         } 
      
  
@@ -106,9 +106,9 @@ The Call ID (callid) obtained is then used to get call-specific details and perf
     + Body
     
             { 
-            from: “sramamurthy@anpi.com" 
-            to: "6698004591" 
-            callId: "callhalf-226509849:0" 
+            "from":"sramamurthy@anpi.com", 
+            "to": "6698004591" ,
+            "callId": "callhalf-226509849:0" 
             } 
    
 
@@ -357,11 +357,11 @@ call : This provides various information regarding the phone call
     
             { 
                 "Subscription":{ 
-                                 "xmlns": "http://schema.broadsoft.com/xsi" 
-                                 "subscriptionId": "7811961b-2268-4fcd-b0ac-4595da1629fa" 
-                                 "expires": "3600" 
+                                 "xmlns": "http://schema.broadsoft.com/xsi" ,
+                                 "subscriptionId": "7811961b-2268-4fcd-b0ac-4595da1629fa" ,
+                                 "expires": "3600" ,
  
-                  } 
+                  } ,
                 "http_code": 200 
             }    
     
@@ -387,7 +387,7 @@ This API allows the user to know the time remaining before an event subscription
 + Response 200 (application/json)
 
         {    
-             "subscriptionId": "e852e843-f9f0-4e92-8ed0-42f48b76ba03" 
+             "subscriptionId": "e852e843-f9f0-4e92-8ed0-42f48b76ba03" ,
              "expires": "6000" 
         }
   
@@ -415,8 +415,8 @@ Note: This updates an existing subscriptions expiry time. It does not increment 
     
             { 
                 "SubscribeResponse": { 
-                                      "xmlns": "http://schema.broadsoft.com/xsi-events" 
-                                      "subscriptionId": "e852e843-f9f0-4e92-8ed0-42f48b76ba03" 
+                                      "xmlns": "http://schema.broadsoft.com/xsi-events" ,
+                                      "subscriptionId": "e852e843-f9f0-4e92-8ed0-42f48b76ba03" ,
                                       "expires": "6000" 
                                      }
             }  
