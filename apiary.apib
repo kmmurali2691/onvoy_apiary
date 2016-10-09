@@ -1,43 +1,30 @@
 FORMAT: 1A
 HOST: http://polls.apiblueprint.org/
 
-# OnvoySecret
+# ANPI DEVELOPER APIs
 
-Polls is a simple API allowing consumers to view polls and vote in them.
+The APIs in this document are organized under the following categories 
+1. Authentication 
+2. Calling 3. Logging 
+Authentication refers to all API calls that deal with authentication to ANPI and renewing associated tokens. 
+Calling and Logging refer to the API calls that relate to calling and logging actions, respectively.
 
-## Questions Collection [/questions]
+Base URL 
+All URLs referenced in the documentation have the following base: 
+https://api.anpi.com/ 
 
-### List All Questions [GET]
 
-+ Response 200 (application/json)
 
-        [
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 2048
-                    }, {
-                        "choice": "Python",
-                        "votes": 1024
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 512
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 256
-                    }
-                ]
-            }
-        ]
+## SECRET KEY [/secret/{userphonenumber}{?application_id}]
++ Parameters
+    + userphonenumber (number) - Phone number for which the secret key is being sought. Requires a 10 digit number. Type: Integer;
+    + application_id (String) -Application ID; to be assigned by developer. A user can have a maximum of 3 applications. Eg: salesforce, Call Center. 
+Note: Each application is limited to 1 event subscription per user. 
 
-### Create a New Question [POST]
 
-You may create your own question using this action. It takes a JSON
-object containing a question and a collection of answers in the
-form of choices.
+### Authentication [POST]
+
+An API_SECRET resource is represented by a 24 character string and is tied to a combination of user phone number and application. This API will allow the user to obtain the API secret for a specific phone number and application combination. The token obtained is valid for 2 hours. 
 
 + Request (application/json)
     + Headers
@@ -45,28 +32,467 @@ form of choices.
             token:773cef66ccc5123940fb1308272e9800
 
 
-+ Response 201 (application/json)
-
-   
++ Response 200 (application/json)
     + Body
 
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 0
-                    }, {
-                        "choice": "Python",
-                        "votes": 0
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 0
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 0
-                    }
-                ]
+             {
+                "api_secret": “db84dd8b70c94a5e66b7e80645c13949fa64e37022b2c961” 
+             }
+    
+
+    
+    
+## AUTHENTICATION CALLBACK  [/secret1/{userphonenumber}{?application_id}{?callback}]
+This resulting API_SECRET will enable the developer to make calls/operations related to that specific user. 
+Note: If the developer gets an API_SECRET using the same application_id before the current token expires, the previous API_SECRET will be overwritten.
+
++ Parameters
+    + userphonenumber (number) - Phone number for which the secret key is being sought. Requires a 10 digit number. Type: Integer;
+    + application_id (String) -Application ID; to be assigned by developer. A user can have a maximum of 3 applications. Eg: salesforce, Call Center. 
+    + callback (String) -URL where the service will notify 2 minutes before the expiry of the secret. 
+    
+
+### Callback Param passing [POST] 
++ Request (application/json)
+    + Headers
             
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+
+            { 
+            "event": { 
+                        "type": "secret_expired", 
+                        "secret": "bccf91b24dc1b25b3adc8de964653f40cae6dad7bb868c4d" 
+                     } 
+            } 
+   
+
+   
+## TTL [/secret/ttl{?api_secret}]
+The TTL call provides the time remaining in the 2 hour validity of the API_Secret token. The time remaining is provided in seconds. 
+
++ Parameters
+    + api_secret (String) - A 24 character string which is be tied to a particular user. 
+
+          
+### Get TTL [GET]
+
++ Response 200 (application/json)
+
+        {
+        time_to_live: 7104 
+        } 
+     
+ 
+
+## CALLING  [/calls/initiate/{destinationnumber}{?api_secret}]
+
+This API allows the user to make calls to phones within and outside your organization. 
+The Call ID (callid) obtained is then used to get call-specific details and perform call- specific operation like terminating a call etc. 
+
++ Parameters
+    + destinationnumber (number) - Phone number of the party you are trying to call. We currently support a 10 digit number. Type: Integer;
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Initiate Calls  [POST] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+            { 
+            from: “sramamurthy@anpi.com" 
+            to: "6698004591" 
+            callId: "callhalf-226509849:0" 
+            } 
+   
+
+
+## ANSWERING CALLS  [/calls/retrieve/callid/{callid}{?api_secret}]
+
+This API allows the user to answer incoming calls. 
+
++ Parameters
+    + callid (String) - An Identifier unique to every user who is identified by a phone. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Answering Calls  [POST] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+            {
+                "status": "ok"
+            }
+   
+
+## TERMINATION OF CALLS [/calls/terminate/callid/{callid}{?api_secret}]
+
+This API allows users to end a call that was placed/ received. 
+
++ Parameters
+    + callid (String) - This is the unique identity of the api - end of the call. It is provided on a per event basis as a result of calling the subscription API. It uniquely identifies the call. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Terminating Calls  [POST] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+             {
+                "status": "ok"
+             }
+   
+
+
+
+
+## TRANSFER TO VOICEMAIL [/calls/transfer_voicemail/callid/{callid}{?api_secret}]
+
+The API allows transferring an incoming call to Voicemail. POST Request 
+
++ Parameters
+    + callid (String) - This is the unique identity of the api - end of the call. It is provided on a per event basis as a result of calling the subscription API. It uniquely identifies the call. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Transfer to VoiceMail [POST] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+             {
+                "status": "ok"
+             }
+
+
+
+
+
+
+## CALL DETAILS [/calls/{callid}{?api_secret}]
+
+This API allows users to obtain the details of a specific active call. Details provided include remote party number and the end point details. 
+
+Callid: This is the unique identity of the api - end of the call 
+
+State: State of the call. Values include Alerting – call is ringing, Active – call is Answered, Released- call is ended 
+
+Personality: This describes the role of the API user. The API user will assume either one of the following roles Originator:User is the one responsible for the event and the call, Terminator: User is on the receiving end 
+
+start time: Specified the start time of the call in unix epochs. 
+
+Name: Name of the remote party 
+
+Address: Phone number of the remote party 
+
+
++ Parameters
+    + callid (String) - This is the unique identity of the api - end of the call 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Call Details [GET] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+
+           { 
+             "Call": { 
+            
+             "xmlns": "http://schema.broadsoft.com/xsi", 
+             "xmlns:xsi1": "http://www.w3.org/2001/XMLSchema-instance", 
+             "callId": "callhalf-1007960985:0", 
+             "extTrackingId": "2479917:2", 
+             "networkCallId": "BW164620750030315-1101622494@172.31.10.201", 
+             "personality": "Originator", 
+             "state": "Active", 
+             "remoteParty": {
+                               "address": "tel:9196072030", 
+                               "callType": "Network" 
+                            },
+             "endpoint": { 
+                            "xsi1:type": "xsi:AccessEndpoint", 
+                            "xmlns:xsi":"http://schema.broadsoft.com/xsi", 
+                            "addressOfRecord": "4152315444_SPIP335@corpglobal.net" 
+                         }, 
+             "appearance": "1", 
+             "diversionInhibited": null, 
+             "startTime": "1425422780460", 
+             "answerTime": "1425422791158" 
+              } 
+
+        } 
+
+
+
+## SET SECONDARY NUMBER [/secondary_number/{secondary_number}{?api_secret}]
+
+This API allows the user to forward all incoming calls to a secondary_number which is provided by user.  
+Note: This API works only during an active subscription. 
+
++ Parameters
+    + secondary_number (Integer) - This is the unique identity of the api - end of the call. It is provided on a per event basis as a result of calling the subscription API. It uniquely identifies the call. Type: Integer. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Set secondary_number  [POST] 
+
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+             {
+                "status": "ok"
+             }
+
+
+
+
+## CLEAR SECONADARY NUMBER [/{secondary_number}{?api_secret}]
+
+This API allows the user to forward all incoming calls to a secondary_number which is provided by user.  
+Note: This API works only during an active subscription. 
+
++ Parameters
+    + secondary_number (Integer) - This is the unique identity of the api - end of the call. It is provided on a per event basis as a result of calling the subscription API. It uniquely identifies the call. Type: Integer. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Clear secondary_number  [POST] 
+
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+             {
+                "status": "ok"
+             }
+
+
+
+
+
+
+## CALL EVENT LOGGING [/events/subscription/initiate{?expires}{?authorization}{?api_secret}]
+
+This API allows users to subscribe to certain events pertaining to calls made or received. This includes notification upon receiving a call, making a call, answering a call, and releasing a call. The default expiration time for a subscription is 3600 seconds. 
+
+Note: The same API can be used to renewing a subscription. 
+Events – data regarding the following four event types are captured and available through the API
+
+        1.Call origination 
+        2.Call received 
+        3.Call released 
+        4.Call answered 
+An event resource is represented by the following properties:
+
+
+
+subscription_id : This uniquely maps the event and the subscription. 
+
+Type : This describes the type of the event. Currently 4 types of events are supported. 
+
+        1.call_originated: This event is generated when a call is originated from the API user  
+        2.call_received : This event is generated when an external user calls the API user  
+        3.call_released : This event is generated when the call is ended by either of the parties  
+        4.call_answered: This event is generated when the call is answered by either of the parties  
+        
+call : This provides various information regarding the phone call 
+
+        1.call_id : This is an id that uniquely identifies the call. 
+        2.personality: This describes the role of the API user. The API user will assume either one of the two roles.
+        3.Originator : User is the one responsible for the event and the call
+        4.Terminator : User is on the receiving end 
+        5.state: This identifies the state of the call. There can be 3 results o Alerting : call is ringing 
+        6.Active : call is answered o Released : call is ended 
+        7.call_start_time : Specified the start time of the call in unix epochs. This will be part of all types of events.
+        8.call_end_time : Specifies end time of the call in unix epochs. This is relevant to only call_released event.
+        9.call_answer_time : Specifies when the call was answered in unix epochs. This is relevant to only call_answered event.
+        10.remote_party: Describes the details of the remote party (ie. the non app user or destination). Consists of: 
+        11.name : remote party’s name
+        12.caller_dn : remote party’s full DID 
+
+
++ Parameters
+
+    + expires (optional , String) - Time for event subscription to expire. It is set to 3600 seconds by default. But may be changed to any value between X and Y . 
+    + authorization (optional , String) - Value provided by client to authenticate with their APIs while relaying back events.   
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+
+### Initiate Subscription  [POST] 
+
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+            { 
+                "Subscription":{ 
+                                 "xmlns": "http://schema.broadsoft.com/xsi" 
+                                 "subscriptionId": "7811961b-2268-4fcd-b0ac-4595da1629fa" 
+                                 "expires": "3600" 
+ 
+                  } 
+                "http_code": 200 
+            }    
+    
+
+
+
+
+
+## SUBSCRIPTION TTL [/events/subscription/ttl/subscriptionid/{subscriptionid}{?api_secret}]
+This API allows the user to know the time remaining before an event subscription’s expiry. 
+
+
++ Parameters
+    + subscriptionid (String) - This uniquely maps the event and the subscription. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Subscription TTL [GET] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+
+        {    
+             "subscriptionId": "e852e843-f9f0-4e92-8ed0-42f48b76ba03" 
+             "expires": "6000" 
+        }
+  
+  
+  
+  
+  
+  
+## SUBSCRIPTION RENEW [/events/subscription/renew/subscriptionid/{susbcriptionid}{?api_secret}]
+This API allows a user to update an existing subscription’s expiration time. 
+Note: This updates an existing subscriptions expiry time. It does not increment it. i.e. If the existing expiration time is 3600 seconds and remaining time for expiration is 30 seconds – this API will increase the remaining time to 3600 seconds if POST with a value of 3600. 
+
++ Parameters
+    + subscriptionid (String) - This uniquely maps the event and the subscription. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Subscription Renew [POST] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+            { 
+                "SubscribeResponse": { 
+                                      "xmlns": "http://schema.broadsoft.com/xsi-events" 
+                                      "subscriptionId": "e852e843-f9f0-4e92-8ed0-42f48b76ba03" 
+                                      "expires": "6000" 
+                                     }
+            }  
+
+
+
+
+
+
+
+
+## TERMINATE SUBSCRIPTION [/events/subscription/terminate/subscriptionid/{susbcriptionid}{?api_secret}]
+
+This API allows the user to terminate any active subscription POST Request 
+
++ Parameters
+    + subscriptionid (String) - This uniquely maps the event and the subscription. 
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Terminate Subscription [POST] 
+
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+    + Body
+    
+             {
+                "status": "ok"
+             }
+
+
+
+
+
+
+## LOGS [/call/logs/{type_of_calls}{?api_secret}]
+This API will return a list of 10 recent calls relevant to the user. If no “type_of_call” is specified, it returns all call types. 
+
++ Parameters
+    + type_of_calls (String) - This parameter identifies the type of call logs to be returned. It can take the Values : “placed”, “received”, “missed” Type: String  
+    + api_secret (String) - An Identifier unique to every user who is identified by a phone.  
+
+### Logs [GET] 
++ Request (application/json)
+    + Headers
+            
+            token:773cef66ccc5123940fb1308272e9800
+
++ Response 200 (application/json)
+
+            { 
+                "missed": { 
+                "startIndex": "1", 
+                "numberOfRecords": "18", 
+                "enhancedCallLogsExtendedEntry": [{ 
+                                                    "countryCode": "1", 
+                                                    "callLogId": "14bcc7a0b712f82b0c252e98715", 
+                                                    "callId": "981513867:1", 
+                                                    "subscriberType": "User", 
+                                                    "callingAssertedNumber": "+12178621964", 
+                                                    "callingPresentationNumber": "1171", 
+                                                    "callingPresentationName": "Jan Ritter", 
+                                                    "callingPresentationIndicator": "Public", 
+                                                    "callingGroupId": "ANPI01", 
+                                                    "connectedNumber": "4003", 
+                                                    "connectedNumberSource": "User", 
+                                                    "connectedName": "Nandhini Raghunathan", 
+                                                    "connectedPresentationIndicator": "Public", 
+                                                    "basicCallType": "Group", 
+                                                    "time": "2015-02-27T11:18:45.361-08:00", 
+                                                    "startTime": "1425064725361", 
+                                                    "releaseTime": "1425064725465" 
+                                                    }, 
+                                                   ], 
+             "pastHourCount": "0" 
             }
